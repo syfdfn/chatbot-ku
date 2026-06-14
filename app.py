@@ -52,7 +52,7 @@ st.set_page_config(page_title="AI Tutor", page_icon="🎓", layout="wide")
 
 with st.sidebar:
     st.title("⚙️ Pengaturan Tutor")
-    tutor_name = st.text_input("Nama Tutor", value="Pak Budi")
+    tutor_name = st.text_input("Nama Tutor", value="Master")
     subject    = st.selectbox("Mata Pelajaran", SUBJECTS)
     style      = st.radio("Gaya Mengajar", [
         "Santai dan friendly 😊",
