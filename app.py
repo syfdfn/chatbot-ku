@@ -12,18 +12,6 @@ SUBJECTS = [
     "Coding JavaScript", "Umum"
 ]
 
-def build_system_prompt(subject, style, name):
-    return f"""Kamu adalah {name}, tutor AI ahli {subject}.
-Gaya mengajar: {style}.
-Aturan:
-- Jelaskan bertahap dari dasar ke lanjut
-- Gunakan analogi dan contoh nyata
-- Untuk soal/kode, beri petunjuk dulu sebelum jawaban
-- Tanya apakah siswa paham sebelum lanjut
-- Jawab Bahasa Indonesia kecuali diminta lain
-- Jika di luar topik {subject}, arahkan kembali sopan"""
-
-# ==================== PERUBAHAN DI SINI ====================
 def get_gemini_response(history, system_prompt):
     model = genai.GenerativeModel(
         model_name="gemini-1.5-flash",
@@ -37,17 +25,10 @@ def get_gemini_response(history, system_prompt):
         })
     chat = model.start_chat(history=gemini_history)
     
-    # Streaming: jawaban keluar kata per kata
-    response_stream = chat.send_message(history[-1]["content"], stream=True)
-    
-    # Tampung dan tampilkan real-time
-    full_response = ""
-    response_placeholder = st.empty()
-    for chunk in response_stream:
-        full_response += chunk.text
-        response_placeholder.markdown(full_response + " ▌")
-    response_placeholder.markdown(full_response)
-    return full_response
+    # ← stream=True ini kuncinya
+    response = chat.send_message(history[-1]["content"], stream=True)
+    for chunk in response:
+        yield chunk.text  # kirim per potongan teks
 # ============================================================
 
 st.set_page_config(page_title="AI Tutor", page_icon="🎓", layout="wide")
@@ -81,10 +62,13 @@ if prompt := st.chat_input(f"Tanya {tutor_name}..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
+
     with st.chat_message("assistant"):
-        # Hapus spinner karena streaming sudah memberikan efek visual
         sp = build_system_prompt(subject, style, tutor_name)
-        response = get_gemini_response(st.session_state.messages, sp)
-        # Catatan: st.markdown sudah di-handle di dalam fungsi get_gemini_response
-        # Jadi tidak perlu st.markdown(response) lagi
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        
+        # st.write_stream otomatis handle generator → tampil streaming
+        full_response = st.write_stream(
+            get_gemini_response(st.session_state.messages, sp)
+        )
+
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
