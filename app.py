@@ -35,17 +35,23 @@ def get_gemini_response(history, system_prompt):
             "parts": [msg["content"]]
         })
     chat = model.start_chat(history=gemini_history)
-    response = chat.send_message(history[-1]["content"], stream=True)
-    for chunk in response:
-        yield chunk.text
+    response_stream = chat.send_message(history[-1]["content"], stream=True)
+
+    full_response = ""
+    placeholder = st.empty()
+    for chunk in response_stream:
+        full_response += chunk.text
+        placeholder.markdown(full_response + " ▌")
+    placeholder.markdown(full_response)
+    return full_response
 
 st.set_page_config(page_title="AI Tutor", page_icon="🎓", layout="wide")
 
 with st.sidebar:
     st.title("⚙️ Pengaturan Tutor")
     tutor_name = st.text_input("Nama Tutor", value="Pak Budi")
-    subject    = st.selectbox("Mata Pelajaran", SUBJECTS)
-    style      = st.radio("Gaya Mengajar", [
+    subject = st.selectbox("Mata Pelajaran", SUBJECTS)
+    style = st.radio("Gaya Mengajar", [
         "Santai dan friendly 😊",
         "Formal dan terstruktur 📚",
         "Socratic (pancing pertanyaan) 🤔"
@@ -72,7 +78,5 @@ if prompt := st.chat_input(f"Tanya {tutor_name}..."):
         st.markdown(prompt)
     with st.chat_message("assistant"):
         sp = build_system_prompt(subject, style, tutor_name)
-        full_response = st.write_stream(
-            get_gemini_response(st.session_state.messages, sp)
-        )
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
+        response = get_gemini_response(st.session_state.messages, sp)
+    st.session_state.messages.append({"role": "assistant", "content": response})
