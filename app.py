@@ -23,6 +23,7 @@ Aturan:
 - Jawab Bahasa Indonesia kecuali diminta lain
 - Jika di luar topik {subject}, arahkan kembali sopan"""
 
+# ==================== PERUBAHAN DI SINI ====================
 def get_gemini_response(history, system_prompt):
     model = genai.GenerativeModel(
         model_name="gemini-1.5-flash",
@@ -35,8 +36,19 @@ def get_gemini_response(history, system_prompt):
             "parts": [msg["content"]]
         })
     chat = model.start_chat(history=gemini_history)
-    response = chat.send_message(history[-1]["content"])
-    return response.text
+    
+    # Streaming: jawaban keluar kata per kata
+    response_stream = chat.send_message(history[-1]["content"], stream=True)
+    
+    # Tampung dan tampilkan real-time
+    full_response = ""
+    response_placeholder = st.empty()
+    for chunk in response_stream:
+        full_response += chunk.text
+        response_placeholder.markdown(full_response + " ▌")
+    response_placeholder.markdown(full_response)
+    return full_response
+# ============================================================
 
 st.set_page_config(page_title="AI Tutor", page_icon="🎓", layout="wide")
 
@@ -70,8 +82,9 @@ if prompt := st.chat_input(f"Tanya {tutor_name}..."):
     with st.chat_message("user"):
         st.markdown(prompt)
     with st.chat_message("assistant"):
-        with st.spinner("Sedang berpikir..."):
-            sp = build_system_prompt(subject, style, tutor_name)
-            response = get_gemini_response(st.session_state.messages, sp)
-        st.markdown(response)
+        # Hapus spinner karena streaming sudah memberikan efek visual
+        sp = build_system_prompt(subject, style, tutor_name)
+        response = get_gemini_response(st.session_state.messages, sp)
+        # Catatan: st.markdown sudah di-handle di dalam fungsi get_gemini_response
+        # Jadi tidak perlu st.markdown(response) lagi
     st.session_state.messages.append({"role": "assistant", "content": response})
