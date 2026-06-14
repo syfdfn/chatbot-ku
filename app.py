@@ -25,7 +25,7 @@ Aturan:
 
 def get_gemini_response(history, system_prompt):
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
+        model_name="gemini-2.0-flash",
         system_instruction=system_prompt
     )
     gemini_history = []
@@ -71,7 +71,8 @@ if prompt := st.chat_input(f"Tanya {tutor_name}..."):
     with st.chat_message("user"):
         st.markdown(prompt)
     with st.chat_message("assistant"):
-        sp = build_system_prompt(subject, style, tutor_name)
+    sp = build_system_prompt(subject, style, tutor_name)
+    with st.spinner("⏳ Sedang memproses..."):
         full_response = st.write_stream(
             get_gemini_response(st.session_state.messages, sp)
         )
