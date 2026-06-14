@@ -71,8 +71,7 @@ if prompt := st.chat_input(f"Tanya {tutor_name}..."):
     with st.chat_message("user"):
         st.markdown(prompt)
     with st.chat_message("assistant"):
-    sp = build_system_prompt(subject, style, tutor_name)
-    with st.spinner("⏳ Sedang memproses..."):
+        sp = build_system_prompt(subject, style, tutor_name)
         full_response = st.write_stream(
             get_gemini_response(st.session_state.messages, sp)
         )
