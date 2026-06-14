@@ -54,7 +54,7 @@ with st.sidebar:
     if st.button("🗑️ Reset Percakapan"):
         st.session_state.messages = []
         st.rerun()
-    st.caption("Model: Gemini 1.5 Flash")
+    st.caption("Model: Gemini 2.0 Flash")
 
 st.title(f"🎓 {tutor_name} — Tutor {subject}")
 st.caption("Tanyakan apa saja seputar pelajaran yang ingin dipelajari!")
