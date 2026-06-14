@@ -3,6 +3,7 @@ import streamlit as st
 import google.generativeai as genai
 import os
 
+# ── API Key ──
 API_KEY = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=API_KEY)
 
@@ -11,6 +12,18 @@ SUBJECTS = [
     "Bahasa Inggris", "Sejarah", "Coding Python",
     "Coding JavaScript", "Umum"
 ]
+
+# ── Fungsi ──
+def build_system_prompt(subject, style, name):
+    return f"""Kamu adalah {name}, tutor AI ahli {subject}.
+Gaya mengajar: {style}.
+Aturan:
+- Jelaskan bertahap dari dasar ke lanjut
+- Gunakan analogi dan contoh nyata
+- Untuk soal/kode, beri petunjuk dulu sebelum jawaban
+- Tanya apakah siswa paham sebelum lanjut
+- Jawab Bahasa Indonesia kecuali diminta lain
+- Jika di luar topik {subject}, arahkan kembali sopan"""
 
 def get_gemini_response(history, system_prompt):
     model = genai.GenerativeModel(
@@ -24,20 +37,19 @@ def get_gemini_response(history, system_prompt):
             "parts": [msg["content"]]
         })
     chat = model.start_chat(history=gemini_history)
-    
-    # ← stream=True ini kuncinya
     response = chat.send_message(history[-1]["content"], stream=True)
     for chunk in response:
-        yield chunk.text  # kirim per potongan teks
-# ============================================================
+        yield chunk.text
 
+# ── Page Config ──
 st.set_page_config(page_title="AI Tutor", page_icon="🎓", layout="wide")
 
+# ── Sidebar — assign ke variabel dulu ──
 with st.sidebar:
     st.title("⚙️ Pengaturan Tutor")
     tutor_name = st.text_input("Nama Tutor", value="Pak Budi")
-    subject = st.selectbox("Mata Pelajaran", SUBJECTS)
-    style = st.radio("Gaya Mengajar", [
+    subject    = st.selectbox("Mata Pelajaran", SUBJECTS)
+    style      = st.radio("Gaya Mengajar", [
         "Santai dan friendly 😊",
         "Formal dan terstruktur 📚",
         "Socratic (pancing pertanyaan) 🤔"
@@ -48,6 +60,7 @@ with st.sidebar:
         st.rerun()
     st.caption("Model: Gemini 1.5 Flash")
 
+# ── Main ──
 st.title(f"🎓 {tutor_name} — Tutor {subject}")
 st.caption("Tanyakan apa saja seputar pelajaran yang ingin dipelajari!")
 
@@ -65,8 +78,6 @@ if prompt := st.chat_input(f"Tanya {tutor_name}..."):
 
     with st.chat_message("assistant"):
         sp = build_system_prompt(subject, style, tutor_name)
-        
-        # st.write_stream otomatis handle generator → tampil streaming
         full_response = st.write_stream(
             get_gemini_response(st.session_state.messages, sp)
         )
